@@ -8,30 +8,6 @@
 #include <stdlib.h>
 #include <assert.h>
 //---------------------------------------------------------------------------
-void Print(const char* msg, std::vector<int>& arr)
-{
-    std::cout << msg << std::endl;
-    for(size_t i=0; i<arr.size(); i++)
-    {
-        std::cout << arr[i] << " ";
-    }
-    std::cout << std::endl;
-
-    return;
-}
-//---------------------------------------------------------------------------
-void Print(const char* msg, int list[], int size)
-{
-    std::cout << msg << std::endl;
-    for(int i=0; i<size; i++)
-    {
-        std::cout << list[i] << " ";
-    }
-    std::cout << std::endl;
-
-    return;
-}
-//---------------------------------------------------------------------------
 class SequentialSearchST
 {
 public:
