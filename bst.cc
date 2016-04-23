@@ -1,6 +1,8 @@
 /*---------------------------------------------------------------------------
  * 二插查找数 
  * 复杂度:最坏lgN/2+1次比较
+ * http://noalgo.info/603.html
+ * http://www.cnblogs.com/Anker/archive/2013/01/28/2880581.html
  ---------------------------------------------------------------------------*/
 //---------------------------------------------------------------------------
 #include <vector>
@@ -21,11 +23,12 @@ public:
 
     struct Node
     {
-        Node(int key, int val, int size)
+        Node(int key, int val, Node* parent, int size)
         :   key_(key),
             val_(val),
             left_(0),
             right_(0),
+            parent_(parent),
             size_(size)
         {
         }
@@ -34,6 +37,7 @@ public:
         int     val_;
         Node*   left_;
         Node*   right_;
+        Node*   parent_;
         int     size_;
     };
 
@@ -54,22 +58,30 @@ public:
     {
         if(0 == root)
         {
-            root = new Node(key, val, 1);
+            root = new Node(key, val, 0, 1);
             return true;
         }
 
-        Node* node = root;
-        while(!node)
+        Node* node  = root;
+        Node* pnode = 0;
+        while(0 != node)
         {
+            pnode = node;
             if(node->key_ > key)
                 node = node->left_;
             else if(node->key_ < key)
                 node = node->right_;
+            else
+                break;
         }
 
         if(0 == node)
         {
-            node = new Node(key, val, 1);
+            node = new Node(key, val, pnode, 1);
+            if(pnode->key_ > key)
+                pnode->left_ = node;
+            else
+                pnode->right_ = node;
             return true;
         }
         else
@@ -103,16 +115,60 @@ public:
         Print(root); 
     }
 
-    Node* Min()
+    Node* Min(Node* node)
     {
-        if(0 == root)
-            return 0;
-
-        Node* node = root;
         while(0 != node->left_)
             node = node->left_;
 
         return node;
+    }
+
+    Node* Max(Node* node)
+    {
+        while(0 != node->right_)
+            node = node->right_;
+
+        return node;
+    }
+
+    Node* SearchSuccessor(Node* node)
+    {
+        if(0 == node)
+            return 0;
+
+        //如果有右子树,则是右子树最小的那个
+        if(node->right_)
+            return Min(node->right_);
+
+        //无右子树,则为最低的祖先
+        Node* parent = node->parent_;
+        while(0!=parent && node==parent->right_)
+        {
+            node    = parent;
+            parent  = parent->parent_;
+        }
+
+        return parent;
+    }
+
+    Node* SearchPredecessor(Node* node)
+    {
+        if(0 == node)
+            return 0;
+
+        //如果有左子树,则左子树最大的那个
+        if(node->left_)
+            return Max(node->left_);
+
+        //无左子树,同上
+        Node* parent = node->parent_;
+        while(0!=parent && node==parent->left_)
+        {
+            node    = parent;
+            parent  = parent->parent_;
+        }
+
+        return parent;
     }
 
     bool Floor(int key, int* rkey)
@@ -140,55 +196,48 @@ public:
         root = DeleteMin(root);
     }
 
-
-private:
-    bool Get(Node* node, int key, int* val)
+    bool Delete(int key)
     {
+        Node* node = root;
+        while(0 != node)
+        {
+            if(node->key_ > key)
+                node = node->left_;
+            else if(node->key_ < key)
+                node = node->right_;
+            else
+                break;
+        }
         if(0 == node)
             return false;
 
-        if(node->key_ > key)
-            return Get(node->left_, key, val);
-        else if(node->key_ < key)
-            return Get(node->right_, key, val);
+        //真正要删除的节点和儿子
+        Node* node_del = (0==node->left_ || 0==node->right_) ? node : SearchSuccessor(node);
+        Node* node_son = node_del->left_ ? node_del->left_ : node_del->right_;
 
-        *val = node->val_;
+        if(0 != node_son)
+            node_son->parent_ = node_del->parent_;//修正儿子节点的父节点
+
+        if(0 == node_del->parent_)//父亲为空,说明删除了根节点
+            root = node_son;
+        else if(node_del == node_del->parent_->left_)//删除的为左儿子,修正左儿子
+            node_del->parent_->left_ = node_son;
+        else    //删除右儿子,修正右节点
+            node_del->parent_->right_ = node_son;
+
+        //把真正删除的节点数据拷贝到原来带删除的节点,在删除节点
+        if(node_del != node)
+        {
+            node->key_ = node_del->key_;
+            node->val_ = node_del->val_;
+        }
+        delete node_del;
+
         return true;
     }
 
-    bool Put(Node*& node, int key, int val)
-    {
-        if(0 == node)
-        {
-            node = new Node(key, val, 1);
-            return true;
-        }
 
-        if(node->key_ > key)
-        {
-            Put(node->left_, key, val);
-        }
-        else if(node->key_ < key)
-        {
-            Put(node->right_, key, val);
-        }
-        else
-        {
-            node->val_ = val;
-        }
-
-        node->size_ = Size(node->left_) + Size(node->right_) + 1;
-        return false;
-    }
-
-    Node* Min(Node* node)
-    {
-        if(0 == node->left_)
-            return node;
-        
-        return Min(node->left_);
-    }
-
+private:
     Node* Floor(Node* node, int key)
     {
         if(0 == node)
@@ -278,11 +327,19 @@ int main(int, char**)
     std::cout << "err_code:" << bst.Get(1000, &val) << " val:" << val << std::endl;
     std::cout << "size: " << bst.Size() << std::endl;
 
+    for(int i=0; i<10; i++)
+    {
+        bst.Delete(i);
+        bst.Print();
+    }
+
+    std::vector<int> keys;
     {
     BST bst;
     for(int i=0; i<10; i++)
     {
         int key = rand()%100;
+        keys.push_back(key);
         std::cout << "key:" << key << std::endl;
         bst.Put(key, i);
     }
@@ -290,6 +347,12 @@ int main(int, char**)
     std::cout << std::endl;
     std::cout << "err_code:" << bst.Get(1000, &val) << " val:" << val << std::endl;
     std::cout << "size: " << bst.Size() << std::endl;
+
+    for(int i=0; i<10; i++)
+    {
+        bst.Delete(keys[i]);
+        bst.Print();
+    }
     }
     //for(int i=0; i<10; i++)
     //{
