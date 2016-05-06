@@ -1,8 +1,11 @@
 /*---------------------------------------------------------------------------
  * R向单词查找树
+ * 一颗单词查找树说需要的空间:RN~RNw之间,其中R为单词表大小,N为key数,w为key
+ * 的平均长度
  ---------------------------------------------------------------------------*/
 //---------------------------------------------------------------------------
 #include <vector>
+#include <queue>
 #include <iostream>
 #include <stdlib.h>
 #include <assert.h>
@@ -53,6 +56,40 @@ public:
         return true;
     }
 
+    std::vector<std::string> Keys()
+    {
+        return KeyWithPrefix("");
+    }
+
+    std::vector<std::string> KeyWithPrefix(std::string pre)
+    {
+        std::vector<std::string> result;
+        Node* node = Get(root_, pre, 0);
+        if(0 == node)
+            return result;
+
+        Collect(node, pre, result);
+        return result;
+    }
+
+    std::vector<std::string> KeysThatMatch(const std::string pat)
+    {
+        std::vector<std::string> result;
+        Collect(root_, "", pat, result);
+        return result;
+    }
+
+    std::string LongestPrefixOf(const std::string s)
+    {
+        int len = Search(root_, s, 0, 0);
+        return s.substr(0, len);
+    }
+
+    void Delete(const std::string& key)
+    {
+        root_ = Delete(root_, key, 0);
+    }
+
 private:
     Node* Get(Node* node, std::string key, size_t d)
     {
@@ -82,6 +119,75 @@ private:
         return node;
     }
 
+    void Collect(Node* node, std::string pre, std::vector<std::string>& q)
+    {
+        if(0 == node)       return;
+        if(0 != node->val)
+            q.push_back(pre);
+
+        for(int i=0; i<R; i++)
+        {
+            Collect(node->next[i], pre+static_cast<char>(i), q);
+        }
+
+        return;
+    }
+
+    void Collect(Node* node, std::string pre, std::string pat, std::vector<std::string>& q)
+    {
+        if(0 == node)
+            return;
+
+        size_t len = pre.length();
+        if(len==pat.length() && node->val!=0)
+            q.push_back(pre);
+
+        if(len == pat.length())
+            return;
+
+       char next = pat.at(len);
+       for(int i=0; i<R; i++)
+           if(next=='.' || next==i)
+               Collect(node->next[i], pre+static_cast<char>(i), pat, q);
+    }
+
+    int Search(Node* node, std::string s, size_t d, size_t length)
+    {
+        if(0 == node)       return length;
+        if(node->val != 0)  length = d;
+        if(d == s.length()) return length;
+
+        int index = static_cast<int>(s[d]);
+        return Search(node->next[index], s, d+1, length);
+    }
+
+    Node* Delete(Node* node, std::string key, size_t d)
+    {
+        if(0 == node)
+            return 0;
+        if(d == key.length())
+        {
+            delete node->val;
+            node->val = 0;
+        }
+        else
+        {
+            int index = static_cast<int>(key[d]);
+            node->next[index] = Delete(node->next[index], key, d+1);
+        }
+
+        if(0 != node->val)
+            return node;
+        for(int i=0; i<R; i++)
+        {
+            if(0 != node->next[i])
+                return node;
+        }
+
+        delete node;
+        return 0;
+    }
+
 private:
     static const int R = 256;
     Node* root_;
@@ -103,6 +209,28 @@ int main(int, char**)
 
     err_code = st.Get("she", &val);
     std::cout << "result: " << err_code << "val: " << val << std::endl;
+    
+    std::cout << "keys:" << std::endl;
+    std::vector<std::string> keys = st.Keys();
+    for(auto iter : keys)
+        std::cout << iter << ",";
+    std::cout << std::endl;
+
+    std::cout << "prefix with:" << std::endl;
+    std::vector<std::string> prefix = st.KeyWithPrefix("sh");
+    for(auto iter : prefix)
+        std::cout << iter << ",";
+    std::cout << std::endl;
+
+    std::cout << "keys with ... :" << std::endl;
+    std::vector<std::string> keywith = st.KeysThatMatch("sh.");
+    for(auto iter : keywith)
+        std::cout << iter << ",";
+    std::cout << std::endl;
+
+    st.Delete("s");
+    st.Delete("she");
+    st.Delete("sh");
 
     return 0;
 }
