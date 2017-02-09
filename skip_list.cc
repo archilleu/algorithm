@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <math.h>
 #include <iostream>
 #include <time.h>
 #include <map>
@@ -233,6 +234,7 @@ int main(int, char**)
     }
    */ 
 
+    isnan(1);
     struct timespec stop;
     clock_gettime(CLOCK_MONOTONIC, &stop);
 

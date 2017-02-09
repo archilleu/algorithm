@@ -4,6 +4,17 @@
 #include <iostream>
 #include <cctype>
 //---------------------------------------------------------------------------
+template <typename T>
+class A
+{
+public:
+    void Fun()
+    {
+        T* t = new T[4];
+        t[0] = "a";
+        std::cout << t[0] << std::endl;
+    }
+};
 class Myab
 {
 public:
@@ -97,6 +108,9 @@ int main(int, char**)
     Myab ab;
     double result = ab.Calc(exp);
     std::cout << "result: " << result << std::endl;
+
+    A<std::string> a;
+    a.Fun();
     return 0;
 }
 //---------------------------------------------------------------------------
