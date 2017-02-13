@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cctype>
 //---------------------------------------------------------------------------
+//简单计算器的实现，使用双stack来操作
 template <typename T>
 class A
 {

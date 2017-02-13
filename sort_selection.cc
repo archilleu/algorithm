@@ -5,73 +5,88 @@
  * 复杂度:比较次数N*N/2,交换次数N
  ---------------------------------------------------------------------------*/
 //---------------------------------------------------------------------------
+#include <memory>
 #include <vector>
 #include <iostream>
-#include <stdlib.h>
-#include <assert.h>
+#include <fstream>
+#include <cassert>
+using namespace std;
 //---------------------------------------------------------------------------
-void Exch(int* a, int* b)
-{   
-    int tmp = *a;
-    *a      = *b;
-    *b      = tmp;
-    return;
-}
-//---------------------------------------------------------------------------
-void Print(const char* msg, std::vector<int>& arr)
+template <typename T>
+class Example
 {
-    std::cout << msg << std::endl;
-    for(size_t i=0; i<arr.size(); i++)
+public:
+    Example(vector<shared_ptr<T>>& vals)
+    :   vals_(vals)
+    {}
+    void Sort()
     {
-        std::cout << arr[i] << " ";
-    }
-    std::cout << std::endl;
-
-    return;
-}
-void AssertSored(const std::vector<int>& arr)
-{
-    for(size_t i=1; i<arr.size(); i++)
-    {
-        assert(arr[i-1] <= arr[i]);
-    }
-
-    return;
-}
-//---------------------------------------------------------------------------
-void SortSelection(std::vector<int>& arr)
-{
-    if(2 > arr.size())
-        return;
-
-    for(size_t i=0; i<arr.size(); i++)
-    {
-        int min = i;
-        for(size_t j=i+1; j<arr.size(); j++)
+        for(size_t i=0; i<vals_.size(); i++)
         {
-            if(arr[j] < arr[min])
-                min = j; 
+            size_t tmp = i;
+            for(size_t j=i+1; j<vals_.size(); j++)
+            {
+                if(Less(vals_[j], vals_[tmp]))
+                    tmp = j;
+            }
+
+            Exch(vals_[i], vals_[tmp]);
+        }
+    }
+
+    bool isSorted()
+    {
+        for(size_t i=0; i<vals_.size()-1; i++)
+        {
+            if(!Less(vals_[i], vals_[i+1]))
+            {
+                if(*(vals_[i]) == *(vals_[i+1]))
+                    continue;
+
+                return false;
+            }
         }
 
-        Exch(&arr[i], &arr[min]);
+        return true;
     }
 
-    return;
-}
+    void Show()
+    {
+        for(int i=0; i<vals_.size(); i++)
+        {
+            std::cout << *(vals_[i]) << " ";
+        }
+
+        std::cout << std::endl;
+    }
+
+private:
+    bool Less(const shared_ptr<T>& l, const shared_ptr<T>& r)
+    {
+        return *l < *r;
+    }
+
+    void Exch(shared_ptr<T>& l, shared_ptr<T>& r)
+    {
+        l.swap(r);
+    }
+
+    vector<shared_ptr<T>> vals_;
+};
 //---------------------------------------------------------------------------
-int main(int, char**)
+int main(int , char** )
 {
-    std::vector<int> arr;
+    std::vector<shared_ptr<int>> vals;
     for(size_t i=0; i<10; i++)
     {
-        arr.push_back(rand()%100);
+        vals.push_back(shared_ptr<int>(new int(rand()%100)));
     }
+    Example<int> sort(vals);
 
-    Print("before", arr);
-    SortSelection(arr);
-    Print("after", arr);
+    sort.Sort();
+    assert(sort.isSorted());
+    sort.Show();
 
-    AssertSored(arr);
     return 0;
 }
 //---------------------------------------------------------------------------
